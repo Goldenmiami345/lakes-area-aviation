@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@astrojs/netlify": "^8.2.12",
     "@astrojs/sitemap": "^3.7.4",
     "@astrojs/vercel": "^11.0.20",
     "astro": "^7.4.7",

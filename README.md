@@ -14,7 +14,11 @@ npm test          # unit tests: scroll engine, traffic pattern rules, estimator,
 npm run build     # static pages + Vercel functions in .vercel/output
 ```
 
-## Deploy (Vercel)
+## Deploy (Netlify or Vercel)
+
+Netlify: import the repo; `netlify.toml` sets the build. Add the variables from `.env.example` under Site configuration > Environment variables.
+
+Vercel:
 
 1. Import this repository in Vercel. The Astro preset is detected; no settings to change.
 2. Add the environment variables from `.env.example` (Project Settings > Environment Variables).
