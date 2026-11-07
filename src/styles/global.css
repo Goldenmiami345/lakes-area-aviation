@@ -96,9 +96,9 @@ ul, ol { margin: 0; padding: 0; }
 .atis-id { color: var(--radar) !important; font-weight: 800; }
 .cat { font-weight: 800; }
 .cat-vfr { color: var(--radar); } .cat-mvfr { color: #8cb8ff; } .cat-ifr { color: var(--red); } .cat-lifr { color: #f08cff; }
-.atis-call { margin-top: .5rem; font-size: .8125rem; font-weight: 600; color: var(--radar); min-height: 1.3em; text-shadow: 0 1px 2px rgba(0,0,0,.8); }
+.atis-call { display: table; margin-top: .5rem; padding: .3rem .6rem; border-radius: 6px; background: rgba(12,22,38,.78); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); font-size: .8125rem; font-weight: 600; color: var(--radar); }
 .atis-call:empty { visibility: hidden; }
 .atis-call.flash { animation: call .5s ease-out; }
 @keyframes call { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
-.atis-src { margin-top: .15rem; font-size: .75rem; color: var(--on-ink-2); text-shadow: 0 1px 2px rgba(0,0,0,.8); }
+.atis-src { display: table; margin-top: .3rem; padding: .2rem .6rem; border-radius: 6px; background: rgba(12,22,38,.6); font-size: .75rem; color: var(--on-ink-2); }
 @media (max-width: 639px) { .atis-row > span:nth-child(n+5):not(.cat) { display: none; } }
