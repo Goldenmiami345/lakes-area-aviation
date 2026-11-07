@@ -1,0 +1,29 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { TESTIMONIALS } from '../data/site';
+---
+<Base title="Student stories" description="What Lakes Area Aviation students say about accelerated CFI, private pilot and commercial training.">
+  <PageHead kicker="Student stories" title="Ratings earned, in their words." />
+  <section class="section">
+    <div class="wrap stories">
+      {TESTIMONIALS.map((t) => (
+        <figure>
+          <blockquote><p>“{t.quote}”</p></blockquote>
+          <figcaption><strong>{t.name}</strong><span>{t.detail}</span></figcaption>
+        </figure>
+      ))}
+      <p class="fine">Individual results vary. Timelines depend on prior experience, preparation, weather, aircraft and examiner availability.</p>
+    </div>
+  </section>
+  <CtaBand />
+</Base>
+<style>
+  .stories { display: grid; gap: 3.5rem; max-width: 56rem; }
+  blockquote { margin: 0; font: 400 var(--step-3)/1.3 var(--font-display); }
+  figcaption { margin-top: 1.25rem; display: grid; gap: .15rem; }
+  figcaption span { color: var(--text-2); }
+  figure { margin: 0; padding-bottom: 3.5rem; border-bottom: 1px solid var(--rule); }
+  .fine { color: var(--text-2); font-size: var(--step--1); }
+</style>

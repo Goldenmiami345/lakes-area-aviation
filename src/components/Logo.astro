@@ -1,0 +1,6 @@
+---
+// Traced from the school's logo; one cached file, coloured by the surrounding text colour.
+interface Props { width?: number }
+const { width = 132 } = Astro.props;
+---
+<svg class="logo" width={width} height={Math.round((width * 888) / 2304)} viewBox="0 0 2304 888" aria-hidden="true" fill="currentColor"><use href="/logo.svg#l" /></svg>

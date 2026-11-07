@@ -1,0 +1,113 @@
+---
+import Logo from './Logo.astro';
+import { NAV, SITE } from '../data/site';
+interface Props { overlay?: boolean }
+const { overlay = false } = Astro.props;
+const path = Astro.url.pathname.replace(/\/$/, '') || '/';
+const isCurrent = (href: string) => (href === '/' ? path === '/' : path === href || path.startsWith(href + '/'));
+---
+<header class:list={['nav', { overlay }]} data-nav>
+  <div class="nav-bar wrap">
+    <a href="/" class="brand" aria-label={`${SITE.name}, home`}><Logo /></a>
+    <nav aria-label="Main" class="nav-links">
+      <ul>
+        {NAV.map((n) => <li><a href={n.href} aria-current={isCurrent(n.href) ? 'page' : undefined}>{n.label}</a></li>)}
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <a class="nav-call" href={SITE.phoneHref} aria-label={`Call ${SITE.name} at ${SITE.phone}`}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.6a1 1 0 0 1-.25 1z" fill="currentColor"/></svg>
+        <span class="nav-call-num num">{SITE.phone}</span>
+      </a>
+      <a class="btn btn-primary nav-cta" href="/contact">Build my training plan</a>
+      <button class="nav-menu" type="button" aria-haspopup="dialog" aria-controls="site-menu" data-menu-open>
+        <span class="sr-only">Open menu</span><span aria-hidden="true" class="bars"><i></i><i></i></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<dialog id="site-menu" class="menu on-ink" aria-label="Site menu" data-menu>
+  <div class="menu-top wrap">
+    <a href="/" class="brand" aria-label={`${SITE.name}, home`}><Logo /></a>
+    <button class="nav-menu" type="button" data-menu-close><span class="sr-only">Close menu</span><span aria-hidden="true" class="bars open"><i></i><i></i></span></button>
+  </div>
+  <nav class="menu-body wrap" aria-label="Site">
+    <ul class="menu-primary">
+      {NAV.map((n, i) => <li style={`--i:${i}`}><a href={n.href} aria-current={isCurrent(n.href) ? 'page' : undefined}>{n.label}</a></li>)}
+    </ul>
+    <ul class="menu-secondary">
+      {SITE.secondaryNav.map((n) => <li><a href={n.href}>{n.label}</a></li>)}
+    </ul>
+    <div class="menu-actions">
+      <a class="btn btn-primary" href="/contact">Build my training plan</a>
+      <a class="btn btn-ghost light" href={SITE.phoneHref}>Call {SITE.phone}</a>
+    </div>
+  </nav>
+</dialog>
+
+<script>
+  const nav = document.querySelector<HTMLElement>('[data-nav]')!;
+  const dlg = document.querySelector<HTMLDialogElement>('[data-menu]')!;
+  // Solid glass once the page has scrolled off its top edge.
+  const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 8);
+  onScroll();
+  window.addEventListener('scroll', onScroll, { passive: true });
+  document.querySelector('[data-menu-open]')?.addEventListener('click', () => { dlg.showModal(); document.documentElement.classList.add('menu-open'); });
+  const close = () => { dlg.classList.add('closing'); dlg.addEventListener('animationend', () => { dlg.classList.remove('closing'); dlg.close(); }, { once: true }); };
+  dlg.querySelector('[data-menu-close]')?.addEventListener('click', close);
+  dlg.addEventListener('cancel', (e) => { e.preventDefault(); close(); });
+  dlg.addEventListener('close', () => document.documentElement.classList.remove('menu-open'));
+  dlg.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => dlg.close()));
+  // A wide window has no menu button: never leave the sheet open.
+  matchMedia('(min-width: 1080px)').addEventListener('change', (m) => { if (m.matches && dlg.open) dlg.close(); });
+</script>
+
+<style>
+  .nav { position: fixed; inset: 0 0 auto; z-index: 50; color: var(--on-ink); height: var(--nav-h);
+    background: linear-gradient(180deg, rgba(12,22,38,.88) 0%, rgba(12,22,38,.72) 100%);
+    -webkit-backdrop-filter: blur(14px) saturate(140%); backdrop-filter: blur(14px) saturate(140%);
+    border-bottom: 1px solid rgba(255,255,255,.08); transition: background-color .3s var(--ease); }
+  /* Over a photo at the top of the page, the glass is lighter so the image reads through. */
+  .nav.overlay:not(.scrolled) { background: linear-gradient(180deg, rgba(12,22,38,.62) 0%, rgba(12,22,38,0) 100%); border-bottom-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .nav-bar { height: 100%; display: flex; align-items: center; gap: 2rem; }
+  .brand { display: inline-flex; align-items: center; min-height: 44px; color: var(--on-ink); }
+  .nav-links { margin-left: auto; }
+  .nav-links ul { display: flex; gap: clamp(1rem, 2vw, 2rem); list-style: none; }
+  .nav-links a { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; font-size: .9375rem; text-decoration: none; color: var(--on-ink); opacity: .86; position: relative; }
+  .nav-links a:hover, .nav-links a[aria-current] { opacity: 1; }
+  .nav-links a[aria-current]::after { content: ''; position: absolute; left: 0; right: 0; bottom: 8px; height: 2px; background: var(--blue-on-ink); }
+  .nav-actions { display: flex; align-items: center; gap: .75rem; }
+  .nav-call { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; min-width: 44px; justify-content: center; color: var(--on-ink); text-decoration: none; font-weight: 600; font-size: .9375rem; }
+  .nav-call svg { width: 18px; height: 18px; }
+  .nav-cta { min-height: 2.75rem; padding-inline: 1.1rem; }
+  .nav-menu { display: none; width: 44px; height: 44px; border: 0; background: none; color: inherit; cursor: pointer; place-items: center; }
+  .bars { display: grid; gap: 6px; width: 22px; }
+  .bars i { display: block; height: 2px; background: currentColor; border-radius: 1px; transition: transform .3s var(--ease); }
+  .bars.open i:first-child { transform: translateY(4px) rotate(45deg); }
+  .bars.open i:last-child { transform: translateY(-4px) rotate(-45deg); }
+  @media (max-width: 1079px) {
+    .nav-links, .nav-cta, .nav-call-num { display: none; }
+    .nav-menu { display: grid; }
+    .nav-actions { margin-left: auto; gap: .25rem; }
+  }
+
+  .menu { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; padding: 0; border: 0; overflow-y: auto; overscroll-behavior: contain; }
+  .menu::backdrop { background: transparent; }
+  .menu[open] { animation: sheet-in .38s var(--ease) both; }
+  .menu.closing { animation: sheet-out .24s ease-in both; }
+  @keyframes sheet-in { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+  @keyframes sheet-out { from { clip-path: inset(0 0 0 0); } to { clip-path: inset(0 0 100% 0); } }
+  .menu-top { height: var(--nav-h); display: flex; align-items: center; justify-content: space-between; }
+  .menu-top .nav-menu { display: grid; }
+  .menu-body { padding-top: 1.5rem; padding-bottom: calc(2rem + env(safe-area-inset-bottom)); display: grid; gap: 2rem; }
+  .menu-primary { list-style: none; display: grid; }
+  .menu-primary a { display: flex; align-items: center; min-height: 3.5rem; font: 500 var(--step-3)/1.1 var(--font-display); text-decoration: none; border-bottom: 1px solid rgba(255,255,255,.1); }
+  .menu[open] .menu-primary li { animation: item-in .45s var(--ease) both; animation-delay: calc(80ms + var(--i) * 35ms); }
+  @keyframes item-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .menu-primary a[aria-current] { color: var(--blue-on-ink); }
+  .menu-secondary { list-style: none; display: flex; flex-wrap: wrap; gap: .25rem 1.25rem; }
+  .menu-secondary a { display: inline-flex; align-items: center; min-height: 44px; color: var(--on-ink-2); text-decoration: none; font-weight: 600; }
+  .menu-actions { display: grid; gap: .75rem; }
+  :global(html.menu-open) { overflow: hidden; }
+</style>

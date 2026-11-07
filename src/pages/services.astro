@@ -1,0 +1,41 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { SITE } from '../data/site';
+const services = [
+  { title: 'Accelerated training', text: 'Full-time, focused training built around your next rating and checkride.', href: '/accelerated-training' },
+  { title: 'Zero to Hero', text: 'From no flight time through your instructor ratings in one plan.', href: '/programs/zero-to-hero' },
+  { title: 'Introductory flights', text: 'Take the controls for the first time with an instructor beside you. $100.', href: '/introductory-flights' },
+  { title: 'Local training', text: 'Train at your own pace, close to home.', href: '/local-training' },
+  { title: 'Specialized training', text: 'Kodiak 100, endorsements and specialty courses.', href: '/specialized-training' },
+  { title: 'Scenic flights', text: 'See the lakes, the plains or the mountains from above, with up to three passengers.', href: '/scenic-flights' },
+];
+---
+<Base title="Services" description="Accelerated ratings, Zero to Hero, introductory flights, local training, Kodiak 100 and specialty courses, and scenic flights.">
+  <PageHead kicker="Services" title="From zero hours to three hundred." text="Whether you have never flown or you are finishing a multi-engine commercial certificate, training is built around you." />
+  <section class="section">
+    <div class="wrap">
+      <ul class="index">
+        {services.map((s) => (
+          <li><a href={s.href}><h2>{s.title}</h2><p>{s.text}</p><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8"/></svg></a></li>
+        ))}
+      </ul>
+      <p class="heli">Helicopter training: call <a class="link num" href={SITE.phoneHref}>{SITE.phone}</a> or <a class="link" href="/contact?goal=helicopter">ask in your training plan</a> about current availability.</p>
+    </div>
+  </section>
+  <CtaBand />
+</Base>
+<style>
+  .index { list-style: none; border-top: 1px solid var(--rule); }
+  .index a { display: grid; grid-template-columns: 1fr auto; gap: .35rem 2rem; padding: 1.75rem 0; border-bottom: 1px solid var(--rule); text-decoration: none; align-items: center; }
+  @media (min-width: 900px) { .index a { grid-template-columns: minmax(16rem, 1fr) 1.4fr auto; } }
+  .index h2 { font-size: var(--step-3); transition: color .2s; }
+  .index p { color: var(--text-2); grid-column: 1; }
+  @media (min-width: 900px) { .index p { grid-column: 2; } }
+  .index svg { width: 28px; height: 28px; grid-row: 1; grid-column: 2; color: var(--blue-text); transition: transform .25s var(--ease); }
+  @media (min-width: 900px) { .index svg { grid-column: 3; } }
+  .index a:hover h2 { color: var(--blue-text); }
+  .index a:hover svg { transform: translateX(4px); }
+  .heli { margin-top: 2.5rem; color: var(--text-2); }
+</style>

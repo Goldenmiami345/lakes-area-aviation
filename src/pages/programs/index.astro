@@ -1,0 +1,53 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageHead from '../../components/PageHead.astro';
+import CtaBand from '../../components/CtaBand.astro';
+import { PROGRAMS } from '../../data/programs';
+import { usd } from '../../data/site';
+const ratings = PROGRAMS.filter((p) => p.slug !== 'zero-to-hero');
+const z = PROGRAMS.find((p) => p.slug === 'zero-to-hero')!;
+---
+<Base title="Training programs" description="Private Pilot, Instrument, Commercial single and multi-engine, CFI and CFII, MEI, and the full Zero to Hero path, with published timelines and prices.">
+  <PageHead kicker="Programs" title="Pick the rating. Set the days." text="Every course with its published timeline and starting price. Open one for the full cost sheet and prerequisites." />
+  <section class="section">
+    <div class="wrap">
+      <ol class="ladder">
+        {ratings.map((p) => (
+          <li>
+            <a href={`/programs/${p.slug}`}>
+              <span class="name"><span class="t">{p.name}</span><span class="o">{p.outcome}</span></span>
+              <span class="days num">{p.courses.map((c) => c.timeline).join(' / ')}</span>
+              <span class="price num">from {usd(Math.min(...p.courses.map((c) => c.asLowAs)))}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+      <a class="z on-ink" href="/programs/zero-to-hero">
+        <span class="zt">{z.name}</span>
+        <span class="zs">{z.summary}</span>
+        <span class="zp num">About {usd(z.courses[0]!.asLowAs)}, six stages</span>
+      </a>
+      <p class="beyond">Endorsements, the Kodiak 100 and specialty courses are on <a class="link" href="/specialized-training">specialized training</a>.</p>
+    </div>
+  </section>
+  <CtaBand />
+</Base>
+<style>
+  .ladder { list-style: none; border-top: 1px solid var(--rule); }
+  .ladder a { display: grid; grid-template-columns: 1fr auto; gap: .35rem 2rem; padding: 1.5rem 0; border-bottom: 1px solid var(--rule); text-decoration: none; align-items: baseline; }
+  @media (min-width: 900px) { .ladder a { grid-template-columns: 1.4fr 1fr auto; } }
+  .name { display: grid; }
+  .t { font: 500 var(--step-3)/1.1 var(--font-display); transition: color .2s; }
+  .o { color: var(--text-2); }
+  .days { color: var(--text-2); grid-column: 1; }
+  @media (min-width: 900px) { .days { grid-column: 2; } }
+  .price { font-weight: 700; grid-row: 1; grid-column: 2; }
+  @media (min-width: 900px) { .price { grid-column: 3; } }
+  .ladder a:hover .t { color: var(--blue-text); }
+  .z { display: grid; gap: .5rem; margin-top: 3rem; padding: clamp(1.75rem, 1rem + 3vw, 3rem); border-radius: var(--radius); text-decoration: none; }
+  .zt { font: 500 var(--step-4)/1 var(--font-display); }
+  .zs { color: var(--on-ink-2); max-width: 48ch; }
+  .zp { color: var(--radar); font-weight: 700; margin-top: .5rem; }
+  .z:hover .zt { color: var(--blue-on-ink); }
+  .beyond { margin-top: 2rem; color: var(--text-2); }
+</style>

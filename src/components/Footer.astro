@@ -1,0 +1,47 @@
+---
+import Logo from './Logo.astro';
+import { SITE, FOOTER } from '../data/site';
+const year = new Date().getFullYear();
+---
+<footer class="foot on-ink">
+  <div class="wrap foot-grid">
+    <div class="foot-brand">
+      <a href="/" aria-label={`${SITE.name}, home`} class="foot-logo"><Logo /></a>
+      <p class="foot-tag">Accelerated flight training in Minnesota, Colorado and Arizona.</p>
+      <a class="foot-phone num" href={SITE.phoneHref}>{SITE.phone}</a>
+    </div>
+    {FOOTER.map((col) => (
+      <nav aria-label={col.title} class="foot-col">
+        <h2 class="foot-h">{col.title}</h2>
+        <ul>{col.links.map((l) => <li><a href={l.href}>{l.label}</a></li>)}</ul>
+      </nav>
+    ))}
+    <div class="foot-col">
+      <h2 class="foot-h">Airports</h2>
+      <ul class="foot-airports">
+        {SITE.locations.map((l) => <li><span class="code num">{l.code}</span> {l.city}, {l.stateName}</li>)}
+      </ul>
+    </div>
+  </div>
+  <div class="wrap foot-base">
+    <p>© {year} {SITE.legalName}</p>
+    <p>Timelines and prices are planning estimates. Examiner fees are additional; aircraft rental is subject to tax.</p>
+  </div>
+</footer>
+
+<style>
+  .foot { padding: clamp(3.5rem, 2.5rem + 4vw, 6rem) 0 calc(2rem + env(safe-area-inset-bottom)); }
+  .foot-grid { display: grid; gap: 2.25rem 1.25rem; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
+  .foot-brand { grid-column: 1 / -1; display: grid; gap: 1rem; justify-items: start; max-width: 28rem; }
+  @media (min-width: 960px) { .foot-grid { grid-template-columns: 1.6fr repeat(4, 1fr); } .foot-brand { grid-column: auto; } }
+  .foot-logo { display: inline-flex; color: var(--on-ink); }
+  .foot-tag { color: var(--on-ink-2); max-width: 30ch; }
+  .foot-phone { font: 500 var(--step-2)/1 var(--font-display); text-decoration: none; display: inline-flex; min-height: 44px; align-items: center; }
+  .foot-h { font: 600 .875rem/1.3 var(--font-ui); color: var(--on-ink-2); margin-bottom: .5rem; letter-spacing: 0; }
+  .foot-col ul { list-style: none; }
+  .foot-col a { display: inline-flex; align-items: center; min-height: 44px; text-decoration: none; color: var(--on-ink); }
+  .foot-col a:hover { text-decoration: underline; text-underline-offset: .2em; }
+  .foot-airports li { min-height: 44px; display: flex; align-items: center; gap: .5rem; }
+  .code { font-weight: 700; color: var(--radar); min-width: 2.6rem; }
+  .foot-base { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,.12); display: flex; flex-wrap: wrap; justify-content: space-between; gap: .75rem 2rem; color: var(--on-ink-2); font-size: var(--step--1); }
+</style>

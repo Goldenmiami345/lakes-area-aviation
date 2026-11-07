@@ -1,0 +1,28 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import Airports from '../components/Airports.astro';
+import CtaBand from '../components/CtaBand.astro';
+const paths = [
+  { title: 'Career change', text: 'A structured path into professional aviation, one lesson at a time.' },
+  { title: 'Ratings and endorsements', text: 'Add an instrument, commercial, tailwheel or instructor rating.' },
+  { title: 'Flying for fun', text: 'Learn to fly as a hobby, on a schedule that fits your life.' },
+];
+---
+<Base title="Local training" description="Train at your own pace close to home in Little Falls, Fort Lupton or Cottonwood: career change, added ratings, or flying for fun.">
+  <PageHead kicker="Local training" title="Your pace, close to home." text="Accelerated training is our specialty, but local students are the heart of the school’s community of aviators." />
+  <section class="section">
+    <div class="wrap">
+      <ul class="paths">{paths.map((p) => <li><h2>{p.title}</h2><p>{p.text}</p></li>)}</ul>
+    </div>
+  </section>
+  <Airports />
+  <CtaBand />
+</Base>
+<style>
+  .paths { list-style: none; display: grid; gap: 2rem; }
+  @media (min-width: 900px) { .paths { grid-template-columns: repeat(3, 1fr); gap: 3rem; } }
+  .paths li { border-top: 2px solid var(--text); padding-top: 1.25rem; }
+  .paths h2 { font-size: var(--step-2); margin-bottom: .6rem; }
+  .paths p { color: var(--text-2); }
+</style>

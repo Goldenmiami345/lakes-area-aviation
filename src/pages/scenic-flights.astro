@@ -1,0 +1,22 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import Airports from '../components/Airports.astro';
+import { SITE } from '../data/site';
+---
+<Base title="Scenic flights" description="Scenic flights for $129 per hour of flight with up to three people, from Little Falls, Fort Lupton or Cottonwood.">
+  <PageHead kicker="Scenic flights" title="See your world from the sky." text="Minnesota fall colors, the Rockies on the horizon, or the landmarks you grew up with, seen from above.">
+    <dl class="facts num">
+      <div><dt>Per hour of flight</dt><dd>$129</dd></div>
+      <div><dt>Passengers</dt><dd>Up to 3</dd></div>
+    </dl>
+    <div class="acts"><a class="btn btn-primary" href={SITE.phoneHref}>Call to book <span class="num">{SITE.phone}</span></a><a class="btn btn-ghost" href="/introductory-flights">Fly it yourself for $100</a></div>
+  </PageHead>
+  <Airports heading="Depart from" />
+</Base>
+<style>
+  .facts { display: flex; gap: 3rem; margin-top: 2rem; }
+  .facts dt { font-size: var(--step--1); font-weight: 600; color: var(--text-2); }
+  .facts dd { margin: .2rem 0 0; font: 500 var(--step-4)/1 var(--font-display); }
+  .acts { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
+</style>

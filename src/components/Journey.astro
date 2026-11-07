@@ -1,0 +1,262 @@
+---
+// A pinned, scroll-driven sequence of full-bleed stages. The crossfade is a pure function of scroll
+// position (src/lib/journey-scroll.ts): the browser scrolls natively and nothing intercepts input.
+import { getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import { JOURNEY_TAIL } from '../lib/journey-scroll';
+import { ticks, PX_PER_KFT } from '../lib/altitude-tape';
+import AirportOverlay from './AirportOverlay.astro';
+import type { FieldId } from '../lib/fields';
+
+export type Stage = {
+  key: string;
+  label: string;
+  /** Altitude (ft) for the climb journey. */
+  alt?: number;
+  /** Short fact under the label, e.g. "As little as 21 days". */
+  fact: string;
+  title: string;
+  text: string;
+  cta: { label: string; href: string };
+  image: ImageMetadata;
+  phoneImage?: ImageMetadata;
+  imageAlt: string;
+  focus?: string;
+  airport?: FieldId;
+};
+interface Props { id: string; label: string; stages: Stage[]; variant: 'climb' | 'airports'; eager?: boolean }
+const { id, label, stages, variant, eager = false } = Astro.props;
+
+const pics = await Promise.all(stages.map(async (s) => ({
+  wide: await getImage({ src: s.image, widths: [960, 1440, 1920, 2560].filter((w) => w <= s.image.width), format: 'webp', quality: 74 }),
+  phone: s.phoneImage ? await getImage({ src: s.phoneImage, widths: [640, 960, 1290].filter((w) => w <= s.phoneImage!.width), format: 'webp', quality: 72 }) : null,
+})));
+const maxAlt = Math.max(0, ...stages.map((s) => s.alt ?? 0));
+const tapeTicks = variant === 'climb' ? ticks(maxAlt + 3000) : [];
+const height = `calc(${stages.length - 1 + JOURNEY_TAIL} * var(--journey-stage) + 100dvh)`;
+---
+<section id={id} class:list={['journey on-ink', variant]} aria-label={label} style={`height:${height}`} data-journey data-count={stages.length}>
+  <div class="viewport" data-viewport>
+    {stages.map((s, i) => (
+      <div class="layer" data-layer={i} style={`z-index:${stages.length - i};${i === 0 ? '' : 'opacity:0;visibility:hidden'}`}>
+        <div class="zoom" data-zoom>
+          <picture>
+            {pics[i]!.phone && <source media="(max-width: 639px) and (orientation: portrait)" srcset={pics[i]!.phone!.srcSet.attribute} sizes="100vw" />}
+            <img src={pics[i]!.wide.src} srcset={pics[i]!.wide.srcSet.attribute} sizes="100vw" alt={s.imageAlt}
+              width={s.image.width} height={s.image.height} loading={i === 0 && eager ? 'eager' : 'lazy'} decoding="async"
+              style={s.focus ? `object-position:${s.focus}` : undefined} />
+          </picture>
+          {s.airport && <AirportOverlay field={s.airport} hasPhoneImage={!!s.phoneImage} />}
+        </div>
+      </div>
+    ))}
+    <div class="shade" aria-hidden="true"></div>
+
+    {variant === 'climb' && (
+      <div class="tape" aria-hidden="true">
+        <div class="tape-window">
+          <div class="tape-scale" data-tape style="transform:translateY(0px)">
+            {tapeTicks.map((t) => <span class:list={['tick', { major: t.major }]} style={`top:${t.y}px`}>{t.major && <b class="num">{t.alt === 0 ? '0' : `${t.alt / 1000}k`}</b>}</span>)}
+          </div>
+          <div class="tape-box num"><span data-alt-k>0</span><small data-alt-h>000</small></div>
+        </div>
+        <div class="tape-unit">ft</div>
+      </div>
+    )}
+
+    <nav class="stages" aria-label={`${label}: stages`}>
+      <ol>
+        {stages.map((s, i) => (
+          <li><a href={`#${id}-${s.key}`} data-jump={i} aria-current={i === 0 ? 'step' : undefined}>
+            <span class="dot" aria-hidden="true"></span><span class="stage-name">{s.label}</span>
+          </a></li>
+        ))}
+      </ol>
+    </nav>
+
+    {variant === 'airports' && <div class="atis" data-atis aria-live="polite"></div>}
+
+    <div class="copies">
+      {stages.map((s, i) => (
+        <article id={`${id}-${s.key}`} class="copy wrap" data-copy={i} aria-hidden={i === 0 ? undefined : 'true'} inert={i !== 0 ? true : undefined} style={i === 0 ? '' : 'opacity:0'}>
+          <p class="copy-label"><span>{s.label}</span><span class="copy-fact num">{s.fact}</span></p>
+          <h2 class="copy-title">{s.title}</h2>
+          <p class="copy-text">{s.text}</p>
+          <p class="copy-cta"><a class="btn btn-primary" href={s.cta.href}>{s.cta.label}</a></p>
+        </article>
+      ))}
+    </div>
+  </div>
+</section>
+
+<noscript><style>{`.journey{height:auto!important}.journey .viewport{position:relative;height:auto}.journey .layer,.journey .copy{position:relative!important;opacity:1!important;visibility:visible!important}.journey .layer{height:100svh}.journey .tape,.journey .stages{display:none}`}</style></noscript>
+
+<script>
+  import { journeyFrame, journeyAltitude, settleTarget, stageLanding, stageLengthFrom, type JourneyGeometry } from '../lib/journey-scroll';
+  import { tapeOffset, readout } from '../lib/altitude-tape';
+
+  const SETTLE_IDLE_MS = 140;
+  const INPUT_QUIET_MS = 200;
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  for (const el of document.querySelectorAll<HTMLElement>('[data-journey]')) {
+    const n = Number(el.dataset.count);
+    const viewport = el.querySelector<HTMLElement>('[data-viewport]')!;
+    const layers = [...el.querySelectorAll<HTMLElement>('[data-layer]')];
+    const zooms = [...el.querySelectorAll<HTMLElement>('[data-zoom]')];
+    const copies = [...el.querySelectorAll<HTMLElement>('[data-copy]')];
+    const links = [...el.querySelectorAll<HTMLAnchorElement>('[data-jump]')];
+    const tape = el.querySelector<HTMLElement>('[data-tape]');
+    const altK = el.querySelector<HTMLElement>('[data-alt-k]');
+    const altH = el.querySelector<HTMLElement>('[data-alt-h]');
+    const climb = el.classList.contains('climb');
+    const zoomOut = climb ? 0.18 : 0.12;
+    let geo: JourneyGeometry | null = null;
+    let active = -1, frame = 0;
+
+    const measure = () => {
+      const vh = viewport.offsetHeight || innerHeight;
+      geo = { base: scrollY + el.getBoundingClientRect().top, stage: stageLengthFrom(el.offsetHeight, vh, n), count: n };
+      return geo;
+    };
+
+    const setActive = (i: number) => {
+      if (i === active) return;
+      active = i;
+      copies.forEach((c, k) => { const on = k === i; c.toggleAttribute('inert', !on); if (on) c.removeAttribute('aria-hidden'); else c.setAttribute('aria-hidden', 'true'); });
+      links.forEach((a, k) => (k === i ? a.setAttribute('aria-current', 'step') : a.removeAttribute('aria-current')));
+      el.dispatchEvent(new CustomEvent('journey:active', { detail: i }));
+      // Decode the neighbours before they can become visible.
+      for (const k of [i - 1, i + 1]) layers[k]?.querySelector('img')?.decode().catch(() => {});
+    };
+
+    const render = () => {
+      const g = geo ?? measure();
+      const fr = journeyFrame(g, scrollY);
+      layers.forEach((layer, i) => {
+        const opacity = i === fr.stage ? 1 - fr.transition : i === fr.next && fr.transition > 0 ? 1 : 0;
+        layer.style.opacity = opacity.toFixed(3);
+        layer.style.visibility = opacity > 0 || i === fr.stage ? 'visible' : 'hidden';
+        if (!reduce) {
+          const leaving = i === fr.stage ? fr.transition : 0;
+          const coming = i === fr.next && i !== fr.stage ? 1 - fr.transition : 0;
+          zooms[i]!.style.transform = `scale(${(1 + leaving * zoomOut + coming * 0.04).toFixed(4)})`;
+        }
+      });
+      copies.forEach((c, i) => {
+        const mine = (i === fr.stage && fr.transition < 0.5) || (i === fr.next && fr.transition >= 0.5 && i !== fr.stage);
+        const o = mine ? fr.copyOpacity : 0;
+        c.style.opacity = o.toFixed(3);
+        c.style.transform = reduce ? '' : `translate3d(0, ${((1 - o) * 10).toFixed(1)}px, 0)`;
+      });
+      if (tape && altK && altH) {
+        const alt = journeyAltitude(fr, n, 35000);
+        tape.style.transform = `translate3d(0, ${tapeOffset(alt).toFixed(1)}px, 0)`;
+        const r = readout(alt); altK.textContent = r.thousands; altH.textContent = r.hundreds;
+      }
+      setActive(fr.active);
+    };
+    const schedule = () => { cancelAnimationFrame(frame); frame = requestAnimationFrame(render); };
+
+    // Settle: a scroll that comes to rest inside a crossfade finishes it toward the nearer edge,
+    // never while a finger is down or wheel/keyboard input is still arriving.
+    let idle = 0, fingers = 0, lastInput = -Infinity, settling: number | null = null;
+    const settle = () => {
+      clearTimeout(idle);
+      if (fingers > 0) return;
+      if (performance.now() - lastInput < INPUT_QUIET_MS) { scheduleSettle(); return; }
+      // Confirm the page is really at rest across two frames. A momentum fling that hitched for a
+      // frame or two keeps moving after the idle timer fires; settling then would fight it.
+      const y0 = scrollY;
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (fingers > 0 || Math.abs(scrollY - y0) > 0.5 || performance.now() - lastInput < INPUT_QUIET_MS) { scheduleSettle(); return; }
+        const target = settleTarget(geo ?? measure(), scrollY);
+        if (target === null) { settling = null; return; }
+        if (settling === target) return;
+        settling = target;
+        scrollTo({ top: target, behavior: reduce ? 'instant' : 'smooth' });
+      }));
+    };
+    const scheduleSettle = () => { clearTimeout(idle); idle = window.setTimeout(settle, SETTLE_IDLE_MS); };
+    const onInput = () => { lastInput = performance.now(); settling = null; clearTimeout(idle); };
+
+    addEventListener('scroll', () => { schedule(); scheduleSettle(); }, { passive: true });
+    addEventListener('scrollend', scheduleSettle);
+    addEventListener('wheel', onInput, { passive: true });
+    addEventListener('keydown', onInput, { passive: true });
+    addEventListener('touchstart', (e) => { fingers = e.touches.length; onInput(); }, { passive: true });
+    addEventListener('touchend', (e) => { fingers = e.touches.length; if (!fingers) scheduleSettle(); }, { passive: true });
+    addEventListener('touchcancel', (e) => { fingers = e.touches.length; if (!fingers) scheduleSettle(); }, { passive: true });
+    const ro = new ResizeObserver(() => { measure(); schedule(); });
+    ro.observe(el); ro.observe(document.body);
+
+    // Stage links: jump to the middle of that stage's hold.
+    links.forEach((a, i) => a.addEventListener('click', (e) => {
+      e.preventDefault();
+      settling = null;
+      scrollTo({ top: stageLanding(measure(), i), behavior: reduce ? 'instant' : 'smooth' });
+    }));
+    // Deep links (#airports-klxl) land on their stage.
+    const hash = location.hash.slice(1);
+    const deep = copies.findIndex((c) => c.id === hash);
+    if (deep >= 0) requestAnimationFrame(() => scrollTo({ top: stageLanding(measure(), deep), behavior: 'instant' }));
+    addEventListener('journey:goto', (e) => { const d = (e as CustomEvent<{ id: string; index: number }>).detail; if (d.id === el.id) { settling = null; scrollTo({ top: stageLanding(measure(), d.index), behavior: reduce ? 'instant' : 'smooth' }); } });
+
+    // Pause any video outside the active stage.
+    el.addEventListener('journey:active', (e) => {
+      const i = (e as CustomEvent<number>).detail;
+      el.querySelectorAll<HTMLVideoElement>('video').forEach((v) => { const mine = v.closest('[data-layer]') === layers[i]; if (mine && !reduce) v.play().catch(() => {}); else v.pause(); });
+    });
+    render();
+  }
+</script>
+
+<style>
+  .journey { position: relative; }
+  .viewport { position: sticky; top: 0; height: 100dvh; overflow: hidden; contain: paint; }
+  .layer { position: absolute; inset: 0; background: var(--ink); will-change: opacity; }
+  .zoom { position: absolute; inset: 0; transform-origin: 50% 55%; will-change: transform; }
+  .zoom img { width: 100%; height: 100%; object-fit: cover; }
+  .shade { position: absolute; inset: 0; z-index: 20; pointer-events: none;
+    background: linear-gradient(180deg, rgba(12,22,38,.55) 0%, rgba(12,22,38,0) 22%, rgba(12,22,38,0) 45%, rgba(12,22,38,.86) 100%); }
+  @media (min-width: 900px) { .shade { background: linear-gradient(180deg, rgba(12,22,38,.5) 0%, rgba(12,22,38,0) 20%), linear-gradient(90deg, rgba(12,22,38,.78) 0%, rgba(12,22,38,.25) 45%, rgba(12,22,38,0) 62%, rgba(12,22,38,0) 72%, rgba(12,22,38,.55) 100%); } }
+
+  .copies { position: absolute; inset: 0; z-index: 30; pointer-events: none; }
+  .copy { position: absolute; left: 0; right: 0; bottom: 0; padding-bottom: calc(1.75rem + env(safe-area-inset-bottom)); padding-right: 4.25rem; display: grid; gap: .6rem; justify-items: start; }
+  @media (min-width: 900px) { .copy { bottom: 50%; transform: translateY(50%); padding-bottom: 0; max-width: 1440px; margin-inline: auto; } .copy > * { max-width: 36rem; } }
+  .copy-label { display: flex; flex-wrap: wrap; gap: .35rem .9rem; align-items: baseline; font-weight: 600; font-size: .9375rem; }
+  .copy-fact { color: var(--radar); }
+  .copy-title { font-size: var(--step-4); }
+  .copy-text { color: var(--on-ink-2); font-size: var(--step-0); max-width: 34ch; }
+  .copy-cta { margin-top: .5rem; pointer-events: auto; }
+  .copy-cta .btn { pointer-events: auto; }
+
+  /* Stage list: a quiet index on the right. Names only where there is room for them. */
+  .stages { position: absolute; z-index: 35; right: max(.5rem, calc(var(--gutter) - 1rem)); top: 50%; transform: translateY(-50%); }
+  .stages ol { list-style: none; display: grid; }
+  .stages a { text-shadow: 0 1px 3px rgba(0,0,0,.85); display: flex; align-items: center; justify-content: flex-end; gap: .75rem; min-height: 44px; min-width: 44px; padding-inline: .5rem; color: var(--on-ink-2); text-decoration: none; font-weight: 600; font-size: .875rem; }
+  .stages a[aria-current] { color: var(--on-ink); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid currentColor; order: 2; transition: transform .25s var(--ease), background-color .25s; }
+  .stages a[aria-current] .dot { background: var(--blue-on-ink); border-color: var(--blue-on-ink); transform: scale(1.4); }
+  .stage-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  @media (min-width: 1200px) { .stage-name { position: static; width: auto; height: auto; overflow: visible; clip-path: none; } }
+  .climb .stages { right: auto; left: auto; }
+  .climb .stages { inset-inline-end: calc(max(.5rem, var(--gutter) - 1rem) + 4.75rem); }
+  @media (max-width: 899px) { .climb .stages { display: none; } }
+
+  /* Altitude tape: the climb journey's progress indicator, styled after a PFD tape. */
+  .tape { position: absolute; z-index: 35; right: max(.5rem, calc(var(--gutter) - .75rem)); top: 50%; transform: translateY(-50%); display: grid; justify-items: center; gap: .35rem; }
+  .tape-window { position: relative; width: 3.75rem; height: min(52vh, 26rem); overflow: hidden; border-left: 1px solid rgba(255,255,255,.35);
+    -webkit-mask-image: linear-gradient(180deg, transparent, #000 18%, #000 82%, transparent); mask-image: linear-gradient(180deg, transparent, #000 18%, #000 82%, transparent); }
+  .tape-scale { position: absolute; left: 0; right: 0; top: 50%; will-change: transform; }
+  .tick { position: absolute; left: 0; width: 8px; height: 1px; background: rgba(255,255,255,.55); }
+  .tick.major { width: 14px; background: var(--on-ink); }
+  .tick b { position: absolute; left: 20px; top: -.6em; font: 600 .75rem/1.2 var(--font-ui); color: var(--on-ink-2); white-space: nowrap; }
+  .tape-box { position: absolute; left: -1px; top: 50%; transform: translateY(-50%); padding: .3rem .45rem; background: var(--ink); border: 1px solid var(--radar); color: var(--radar); font: 700 1rem/1 var(--font-ui); display: flex; align-items: baseline; gap: 1px; min-width: 4.25rem; }
+  .tape-box small { font-size: .7rem; font-weight: 600; }
+  .tape-unit { font-size: .75rem; color: var(--on-ink-2); font-weight: 600; }
+  @media (max-width: 639px) { .tape-window { height: 38vh; width: 3.25rem; } .tape-box { min-width: 3.6rem; font-size: .875rem; } }
+
+  .atis { position: absolute; z-index: 35; left: 0; right: 0; top: calc(var(--nav-h) + .75rem); padding-inline: var(--gutter); pointer-events: none; }
+  @media (prefers-reduced-motion: reduce) { .zoom { transform: none !important; } }
+</style>

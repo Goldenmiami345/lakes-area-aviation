@@ -1,0 +1,76 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { FLEET } from '../data/site';
+
+const cutouts = import.meta.glob<{ default: ImageMetadata }>('../assets/fleet/*.webp', { eager: true });
+const img = (reg: string) => cutouts[`../assets/fleet/${reg.toLowerCase()}.webp`]?.default;
+const roles = ['Trainer', 'Twin', 'Tailwheel'] as const;
+const count = (r: string) => FLEET.filter((a) => a.role === r).length;
+---
+<Base title="Fleet" description="Every airplane in the Lakes Area Aviation fleet with real photos, tail numbers, equipment and published wet rates: Cessna 172s, a Cessna 150, a Piper Apache twin and two tailwheel airplanes.">
+  <PageHead kicker="Fleet" title="The airplanes you’ll actually fly." text="Real photos, real tail numbers and the published wet rate for each." />
+  <section class="section">
+    <div class="wrap">
+      <div class="filter" role="group" aria-label="Show aircraft">
+        <button type="button" aria-pressed="true" data-role="all">All <span class="num">{FLEET.length}</span></button>
+        {roles.map((r) => <button type="button" aria-pressed="false" data-role={r}>{r === 'Twin' ? 'Twin' : `${r}s`} <span class="num">{count(r)}</span></button>)}
+      </div>
+      <ul class="fleet">
+        {FLEET.map((a, i) => {
+          const pic = img(a.reg);
+          return (
+            <li class="ac" data-role={a.role}>
+              <div class="pic">{pic && <Image src={pic} alt={`${a.nickname ? `${a.nickname}, ` : ''}${a.name} ${a.reg}`} widths={[480, 720, 960, 1280].filter((w) => w <= pic.width)} sizes="(min-width: 1100px) 40vw, 92vw" format="webp" quality={78} loading={i < 2 ? 'eager' : 'lazy'} />}</div>
+              <div class="info">
+                <p class="reg num">{a.reg}</p>
+                <h2>{a.nickname ?? a.name}</h2>
+                <p class="model">{a.specs.Year} {a.name}</p>
+                <p class="use">{a.use}</p>
+                <dl class="specs">
+                  {Object.entries(a.specs).filter(([k]) => k !== 'Year').map(([k, v]) => <div><dt>{k}</dt><dd>{v}</dd></div>)}
+                </dl>
+                <p class="rate num">{a.regular ? <><strong>${a.prepay}/hr</strong> prepaid, ${a.regular}/hr regular, wet</> : 'Rate on request'}</p>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <p class="fine">Prepay rates apply when your account holds $500 or more at billing. All rates include fuel and insurance; state tax is additional. <a class="link" href="/rates">Full rate sheet</a>.</p>
+    </div>
+  </section>
+  <CtaBand />
+</Base>
+<script>
+  const btns = [...document.querySelectorAll<HTMLButtonElement>('.filter button')];
+  const items = [...document.querySelectorAll<HTMLElement>('.ac')];
+  btns.forEach((b) => b.addEventListener('click', () => {
+    btns.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    items.forEach((it) => { it.hidden = b.dataset.role !== 'all' && it.dataset.role !== b.dataset.role; });
+  }));
+</script>
+<style>
+  .filter { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: 2.5rem; }
+  .filter button { min-height: 44px; padding: .5rem 1rem; border: 1px solid var(--rule); border-radius: 999px; background: #fff; font-weight: 600; cursor: pointer; }
+  .filter button span { color: var(--text-2); margin-left: .25rem; }
+  .filter button[aria-pressed='true'] { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
+  .filter button[aria-pressed='true'] span { color: var(--on-ink-2); }
+  .fleet { list-style: none; display: grid; gap: 1px; background: var(--rule); border-block: 1px solid var(--rule); }
+  .ac { background: var(--paper); display: grid; gap: 1.5rem; padding: 2rem 0; }
+  @media (min-width: 900px) { .ac { grid-template-columns: 1.15fr 1fr; gap: 3rem; align-items: center; padding: 2.5rem 0; } }
+  .pic { aspect-ratio: 5 / 2.2; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 85%, #e9e0d1 0%, transparent 70%); }
+  .pic :global(img) { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 14px 10px rgba(12,22,38,.18)); }
+  .reg { font-weight: 700; color: var(--blue-text); }
+  .info h2 { font-size: var(--step-4); margin-top: .2rem; }
+  .model { font-weight: 600; margin-top: .4rem; }
+  .use { color: var(--text-2); margin-top: .2rem; }
+  .specs { display: grid; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); gap: .75rem 1.5rem; margin: 1.5rem 0; }
+  .specs dt { font-size: var(--step--1); color: var(--text-2); font-weight: 600; }
+  .specs dd { margin: .1rem 0 0; }
+  .rate { padding-top: 1rem; border-top: 1px solid var(--rule); color: var(--text-2); }
+  .rate strong { color: var(--text); font-size: var(--step-1); }
+  .fine { margin-top: 2rem; color: var(--text-2); font-size: var(--step--1); }
+</style>

@@ -1,0 +1,51 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { PROGRAMS } from '../data/programs';
+import { TRAVEL, usd } from '../data/site';
+const courses = PROGRAMS.filter((p) => p.slug !== 'zero-to-hero').flatMap((p) => p.courses.map((c) => ({ p, c })));
+---
+<Base title="Accelerated training" description="Concentrated flight and ground training: Private Pilot in as little as 21 days, CFI in 7 to 10 days, CFII in 5 to 7 days, with housing and cars on site.">
+  <PageHead kicker="Accelerated training" title="Turn open days into your next rating." text="Concentrated flight and ground training for pilots who arrive prepared and want every day to count." />
+  <section class="section">
+    <div class="wrap">
+      <table class="sheet">
+        <caption>Published course lengths and starting prices</caption>
+        <thead><tr><th scope="col">Course</th><th scope="col">Days</th><th scope="col" class="r">As low as</th></tr></thead>
+        <tbody>
+          {courses.map(({ p, c }) => <tr><th scope="row"><a href={`/programs/${p.slug}`}>{c.name}</a></th><td class="num">{c.timeline}</td><td class="r num">{usd(c.asLowAs)}</td></tr>)}
+        </tbody>
+      </table>
+      <p class="fine">Timelines are targets, not guarantees: experience, preparation, weather, maintenance and examiner availability all affect completion. A wide fleet keeps aircraft delays to a minimum.</p>
+    </div>
+  </section>
+  <section class="section stay on-ink">
+    <div class="wrap stay-grid">
+      <h2>Your logistics can be part of the plan.</h2>
+      <dl class="facts num">
+        <div><dt>Student housing</dt><dd>${TRAVEL.housingPerNight}<small>/night</small></dd></div>
+        <div><dt>Resident cars</dt><dd>${TRAVEL.carPerDay}<small>/day</small></dd></div>
+      </dl>
+    </div>
+  </section>
+  <CtaBand />
+</Base>
+<style>
+  caption { text-align: left; font-weight: 600; color: var(--text-2); padding-bottom: 1rem; }
+  .sheet { width: 100%; border-collapse: collapse; }
+  .sheet th, .sheet td { padding: 1.05rem 1rem 1.05rem 0; border-bottom: 1px solid var(--rule); text-align: left; }
+  .sheet thead th { font-size: var(--step--1); color: var(--text-2); font-weight: 600; }
+  .sheet tbody th { font-weight: 600; }
+  .sheet tbody th a { text-decoration: none; display: inline-flex; min-height: 44px; align-items: center; }
+  .sheet tbody th a:hover { color: var(--blue-text); text-decoration: underline; text-underline-offset: .2em; }
+  .r { text-align: right !important; padding-right: 0 !important; }
+  .fine { margin-top: 1.5rem; color: var(--text-2); max-width: 70ch; font-size: var(--step--1); }
+  .stay-grid { display: grid; gap: 2rem; align-items: end; }
+  @media (min-width: 900px) { .stay-grid { grid-template-columns: 1fr auto; } }
+  .stay h2 { font-size: var(--step-4); max-width: 16ch; }
+  .facts { display: flex; gap: 3rem; }
+  .facts dt { color: var(--on-ink-2); font-size: var(--step--1); font-weight: 600; }
+  .facts dd { margin: .3rem 0 0; font: 500 var(--step-4)/1 var(--font-display); }
+  .facts small { font: 600 var(--step--1) var(--font-ui); color: var(--on-ink-2); margin-left: .2rem; }
+</style>

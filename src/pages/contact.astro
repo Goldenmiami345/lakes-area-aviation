@@ -1,0 +1,200 @@
+---
+import Base from '../layouts/Base.astro';
+import { RATINGS } from '../lib/estimator';
+import { SITE, TRAVEL, usd } from '../data/site';
+---
+<Base title="Build my training plan" description="Check what you hold, pick what's next, and see the published days and cost before you call. Then send it to Lakes Area Aviation for a real schedule.">
+  <section class="plan">
+    <div class="wrap">
+      <header class="intro">
+        <h1>Build your training plan.</h1>
+        <p class="lede">Check what you hold, pick what’s next, and see the published days and cost. Send it and we’ll put real dates around it.</p>
+      </header>
+
+      <div class="layout">
+        <form class="builder" data-builder aria-label="Training plan estimator">
+          <fieldset>
+            <legend><span class="n num">1</span>Ratings you already hold</legend>
+            <div class="opts">
+              {RATINGS.map((r) => <label class="opt"><input type="checkbox" name="held" value={r.id} /><span>{r.name}</span></label>)}
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend><span class="n num">2</span>Ratings you want</legend>
+            <div class="opts">
+              {RATINGS.map((r) => (
+                <label class="opt"><input type="checkbox" name="want" value={r.id} /><span>{r.name}</span><span class="meta num">{r.days}+ days, {usd(r.price)}</span></label>
+              ))}
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend><span class="n num">3</span>Staying on site</legend>
+            <div class="opts">
+              <label class="opt"><input type="checkbox" name="housing" /><span>Student housing</span><span class="meta num">${TRAVEL.housingPerNight} a night</span></label>
+              <label class="opt"><input type="checkbox" name="car" /><span>Student car</span><span class="meta num">${TRAVEL.carPerDay} a day, with housing</span></label>
+            </div>
+          </fieldset>
+        </form>
+
+        <aside class="sum" aria-labelledby="sum-h">
+          <h2 id="sum-h" class="sr-only">Your estimate</h2>
+          <div class="sum-inner" data-summary aria-live="polite">
+            <p class="empty">Pick a rating to see days and cost.</p>
+          </div>
+          <p class="fine">Published minimum days and prices plus a 20% buffer. Weather, proficiency, examiner fees, tax, aircraft availability and time-building can change the final schedule and cost.</p>
+          <a class="btn btn-primary send" href="#request">Send this plan</a>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="section req" id="request" aria-labelledby="req-h">
+    <div class="wrap req-grid">
+      <div>
+        <h2 id="req-h">Put real dates on it.</h2>
+        <p class="lede">We reply by email or phone. Prefer to talk now? Call <a class="link num" href={SITE.phoneHref}>{SITE.phone}</a>.</p>
+      </div>
+      <form method="post" action="/api/lead" class="lead" data-lead novalidate>
+        <div class="status" data-status role="status" tabindex="-1"></div>
+        <div class="row">
+          <label>First name<input name="firstName" autocomplete="given-name" required /></label>
+          <label>Last name<input name="lastName" autocomplete="family-name" /></label>
+        </div>
+        <div class="row">
+          <label>Email<input name="email" type="email" autocomplete="email" inputmode="email" required /></label>
+          <label>Phone <span class="opt-l">(optional)</span><input name="phone" type="tel" autocomplete="tel" inputmode="tel" /></label>
+        </div>
+        <div class="row">
+          <label>Airport
+            <select name="location">
+              <option value="">No preference</option>
+              {SITE.locations.map((l) => <option value={l.code}>{l.city}, {l.state} ({l.code})</option>)}
+            </select>
+          </label>
+          <label>Target start<input name="start" type="month" /></label>
+        </div>
+        <label>Anything else?<textarea name="message" rows="4" placeholder="Hours logged, dates you can travel, questions"></textarea></label>
+        <input type="hidden" name="plan" data-plan-field />
+        <input type="hidden" name="goal" data-goal-field />
+        <div class="hp" aria-hidden="true"><label>Company<input name="company" tabindex="-1" autocomplete="off" /></label></div>
+        <button class="btn btn-primary" type="submit">Send my training plan</button>
+      </form>
+    </div>
+  </section>
+</Base>
+
+<script>
+  import { estimate, RATINGS, type RatingId } from '../lib/estimator';
+  const usd = (n: number) => `$${n.toLocaleString('en-US')}`;
+  const f = document.querySelector<HTMLFormElement>('[data-builder]')!;
+  const out = document.querySelector<HTMLElement>('[data-summary]')!;
+  const planField = document.querySelector<HTMLInputElement>('[data-plan-field]')!;
+  const vals = (name: string) => [...f.querySelectorAll<HTMLInputElement>(`input[name=${name}]:checked`)].map((i) => i.value as RatingId);
+
+  const update = () => {
+    const held = vals('held');
+    // A rating you hold can't also be planned.
+    f.querySelectorAll<HTMLInputElement>('input[name=want]').forEach((i) => { const h = held.includes(i.value as RatingId); i.disabled = h; if (h) i.checked = false; });
+    const car = f.querySelector<HTMLInputElement>('input[name=car]')!;
+    const housing = f.querySelector<HTMLInputElement>('input[name=housing]')!.checked;
+    car.disabled = !housing; if (!housing) car.checked = false;
+    const e = estimate({ held, want: vals('want'), housing, car: car.checked, housingPerNight: 30, carPerDay: 20 });
+    if (!e.ratings.length) {
+      out.innerHTML = '<p class="empty">Pick a rating to see days and cost.</p>';
+      planField.value = '';
+      return;
+    }
+    const rows = [
+      ...e.ratings.map((r) => [r.name, usd(r.price)]),
+      ...(e.housing ? [[`Housing, ${e.days} nights`, usd(e.housing)]] : []),
+      ...(e.car ? [[`Car, ${e.days} days`, usd(e.car)]] : []),
+      ['Buffer, 20%', usd(e.contingency)],
+    ];
+    const warn = e.missing.map((m) => `<li><strong>${m.rating.name}</strong> needs ${m.needs.join(' and ')} first.</li>`).join('');
+    out.innerHTML = `
+      <div class="big"><p><span class="v num">${e.days}+</span><span class="k">training days</span></p><p><span class="v num">${usd(e.total)}</span><span class="k">estimated total</span></p></div>
+      <table class="lines"><tbody>${rows.map(([a, b]) => `<tr><th scope="row">${a}</th><td class="num">${b}</td></tr>`).join('')}</tbody></table>
+      ${warn ? `<ul class="warn">${warn}</ul>` : ''}`;
+    planField.value = `Holds: ${held.map((h) => RATINGS.find((r) => r.id === h)!.name).join(', ') || 'none'}\nWants: ${e.ratings.map((r) => r.name).join(', ')}\n${e.days}+ days, estimated ${usd(e.total)} incl. 20% buffer${e.housing ? `, housing` : ''}${e.car ? `, car` : ''}`;
+  };
+  f.addEventListener('change', update);
+
+  // Prefill from links like /contact?location=KLXL or ?goal=intro, and from a no-JS redirect.
+  const q = new URLSearchParams(location.search);
+  const lead = document.querySelector<HTMLFormElement>('[data-lead]')!;
+  const status = lead.querySelector<HTMLElement>('[data-status]')!;
+  const loc = q.get('location'); if (loc) { const s = lead.querySelector<HTMLSelectElement>('select[name=location]')!; if ([...s.options].some((o) => o.value === loc)) s.value = loc; }
+  const goal = q.get('goal') ?? q.get('topic'); if (goal) lead.querySelector<HTMLInputElement>('[data-goal-field]')!.value = goal;
+  const want = q.get('want'); if (want) { const i = f.querySelector<HTMLInputElement>(`input[name=want][value=${CSS.escape(want)}]`); if (i) i.checked = true; }
+  const show = (ok: boolean, text: string) => { status.className = `status ${ok ? 'ok' : 'err'}`; status.textContent = text; status.focus(); };
+  if (q.get('sent')) show(true, 'Sent. We’ll be in touch about dates.');
+  if (q.get('error')) show(false, q.get('error')!);
+  update();
+
+  lead.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = lead.querySelector<HTMLButtonElement>('button[type=submit]')!;
+    const first = lead.querySelector<HTMLInputElement>('input[name=firstName]')!;
+    const email = lead.querySelector<HTMLInputElement>('input[name=email]')!;
+    if (!first.value.trim()) { show(false, 'Add your first name.'); first.focus(); return; }
+    if (!email.checkValidity() || !email.value.trim()) { show(false, 'Add an email we can reply to.'); email.focus(); return; }
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const r = await fetch(lead.action, { method: 'POST', body: new FormData(lead), headers: { accept: 'application/json' } });
+      const body = (await r.json().catch(() => ({ ok: false }))) as { ok: boolean; error?: string };
+      if (body.ok) { lead.reset(); show(true, 'Sent. We’ll be in touch about dates.'); }
+      else show(false, body.error ?? 'Your request didn’t send. Please try again or call 318-347-9004.');
+    } catch { show(false, 'Your request didn’t send. Check your connection, or call 318-347-9004.'); }
+    btn.disabled = false; btn.textContent = 'Send my training plan';
+  });
+</script>
+
+<style>
+  .plan { padding: calc(var(--nav-h) + clamp(2.5rem, 2rem + 3vw, 5rem)) 0 clamp(3rem, 2rem + 3vw, 5rem); border-bottom: 1px solid var(--rule); }
+  .intro h1 { font-size: var(--step-5); max-width: 14ch; }
+  .intro .lede { margin-top: 1rem; }
+  .layout { display: grid; gap: 2.5rem; margin-top: 3rem; }
+  @media (min-width: 1000px) { .layout { grid-template-columns: 1.4fr 1fr; gap: 4rem; align-items: start; } .sum { position: sticky; top: calc(var(--nav-h) + 1.5rem); } }
+  fieldset { border: 0; padding: 0; margin: 0 0 2.25rem; }
+  legend { display: flex; align-items: center; gap: .75rem; font: 500 var(--step-2)/1.2 var(--font-display); margin-bottom: 1rem; }
+  .n { display: inline-grid; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: var(--ink); color: var(--on-ink); font: 700 .875rem/1 var(--font-ui); }
+  .opts { display: grid; gap: .5rem; }
+  @media (min-width: 640px) { .opts { grid-template-columns: 1fr 1fr; } }
+  .opt { display: grid; grid-template-columns: auto 1fr; column-gap: .75rem; align-items: center; min-height: 3.25rem; padding: .7rem 1rem; border: 1px solid var(--rule); border-radius: var(--radius); background: #fff; cursor: pointer; transition: border-color .15s, background-color .15s; }
+  .opt:hover { border-color: var(--text-2); }
+  .opt:has(input:checked) { border-color: var(--blue); background: #eef4ff; }
+  .opt:has(input:disabled) { opacity: .5; cursor: not-allowed; }
+  .opt input { width: 1.15rem; height: 1.15rem; accent-color: var(--blue); grid-row: span 2; margin: 0; }
+  .opt span:first-of-type { font-weight: 600; }
+  .meta { grid-column: 2; color: var(--text-2); font-size: var(--step--1); }
+  .sum { background: var(--ink); color: var(--on-ink); border-radius: var(--radius); padding: 1.75rem; display: grid; gap: 1.25rem; }
+  .sum :global(.empty) { color: var(--on-ink-2); }
+  .sum :global(.big) { display: flex; gap: 2rem; flex-wrap: wrap; }
+  .sum :global(.big p) { display: grid; }
+  .sum :global(.v) { font: 500 var(--step-4)/1 var(--font-display); }
+  .sum :global(.k) { color: var(--on-ink-2); font-size: var(--step--1); font-weight: 600; margin-top: .35rem; }
+  .sum :global(.lines) { width: 100%; border-collapse: collapse; }
+  .sum :global(.lines th), .sum :global(.lines td) { padding: .55rem 0; border-bottom: 1px solid rgba(255,255,255,.12); font-weight: 500; text-align: left; }
+  .sum :global(.lines td) { text-align: right; }
+  .sum :global(.warn) { list-style: none; display: grid; gap: .4rem; padding: .85rem 1rem; border-left: 3px solid var(--amber); background: rgba(242,179,61,.1); font-size: var(--step--1); }
+  .fine { color: var(--on-ink-2); font-size: var(--step--1); }
+  .send { justify-self: start; }
+
+  .req-grid { display: grid; gap: 2.5rem; }
+  @media (min-width: 1000px) { .req-grid { grid-template-columns: 1fr 1.4fr; gap: 5rem; } }
+  .req h2 { font-size: var(--step-4); margin-bottom: 1rem; }
+  .req .lede a { display: inline; }
+  .lead { display: grid; gap: 1.1rem; }
+  .row { display: grid; gap: 1.1rem; }
+  @media (min-width: 640px) { .row { grid-template-columns: 1fr 1fr; } }
+  .lead label { display: grid; gap: .4rem; font-weight: 600; font-size: .9375rem; }
+  .opt-l { font-weight: 500; color: var(--text-2); }
+  .lead input, .lead select, .lead textarea { width: 100%; min-height: 3rem; padding: .7rem .85rem; border: 1px solid #b9ae9c; border-radius: var(--radius); background: #fff; font-weight: 400; font-size: 1rem; }
+  .lead input:focus-visible, .lead select:focus-visible, .lead textarea:focus-visible { outline: 2px solid var(--blue); outline-offset: 0; border-color: var(--blue); }
+  .lead button { justify-self: start; margin-top: .5rem; }
+  .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+  .status:empty { display: none; }
+  .status { padding: .9rem 1rem; border-radius: var(--radius); font-weight: 600; }
+  .status.ok { background: #e6f5ec; color: #14532d; }
+  .status.err { background: #fdecec; color: #8a1c1c; }
+</style>

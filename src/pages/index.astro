@@ -1,0 +1,168 @@
+---
+import { getImage, Picture } from 'astro:assets';
+import Base from '../layouts/Base.astro';
+import Journey, { type Stage } from '../components/Journey.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { PHOTOS, AERIALS } from '../data/photos';
+import { SITE, TESTIMONIALS, TRAVEL } from '../data/site';
+import { FIELDS } from '../lib/fields';
+
+const climb: Stage[] = [
+  { key: 'discovery', label: 'Discovery flight', alt: 0, fact: '$100', title: 'Take the controls on day one.', text: 'Left seat, with an instructor beside you.', cta: { label: 'Book an intro flight', href: '/introductory-flights' }, image: PHOTOS.clouds.src, phoneImage: PHOTOS.clouds.phone, imageAlt: PHOTOS.clouds.alt },
+  { key: 'private', label: 'Private pilot', alt: 7000, fact: 'As little as 21 days', title: 'Your first certificate.', text: 'Ground and flight training in one focused block.', cta: { label: 'Private pilot details', href: '/programs/private-pilot' }, image: PHOTOS.runway.src, phoneImage: PHOTOS.runway.phone, imageAlt: PHOTOS.runway.alt },
+  { key: 'instrument', label: 'Instrument rating', alt: 14000, fact: '10 to 14 days', title: 'Fly by the panel.', text: 'Learn to fly safely in cloud, with simulator time built in.', cta: { label: 'Instrument details', href: '/programs/instrument-rating' }, image: PHOTOS.instrument.src, phoneImage: PHOTOS.instrument.phone, imageAlt: PHOTOS.instrument.alt, focus: 'center 70%' },
+  { key: 'commercial', label: 'Commercial pilot', alt: 21000, fact: '5 to 7 days', title: 'Fly for a living.', text: 'Commercial standards in one concentrated course.', cta: { label: 'Commercial details', href: '/programs/commercial-single-engine' }, image: PHOTOS.commercial.src, phoneImage: PHOTOS.commercial.phone, imageAlt: PHOTOS.commercial.alt },
+  { key: 'instructor', label: 'CFI and CFII', alt: 28000, fact: 'CFI 7 to 10 days, CFII 5 to 7', title: 'Become the instructor.', text: 'Each checkride is about a one-hour oral and a one-hour flight.', cta: { label: 'CFI and CFII details', href: '/programs/cfi-cfii' }, image: PHOTOS.instructor.src, phoneImage: PHOTOS.instructor.phone, imageAlt: PHOTOS.instructor.alt },
+  { key: 'right-seat', label: 'The right seat', alt: 35000, fact: 'Your goal', title: 'Build toward the airline flight deck.', text: 'Every instructing hour moves you closer.', cta: { label: 'Build my training plan', href: '/contact' }, image: PHOTOS.airline.src, imageAlt: PHOTOS.airline.alt },
+];
+
+const airports: Stage[] = SITE.locations.map((l) => ({
+  key: l.code.toLowerCase(), label: `${l.city}, ${l.state}`, fact: `${l.code}, field elevation ${FIELDS[l.field].elevationFt.toLocaleString('en-US')} ft`,
+  title: `${l.airport}.`, text: `${l.street}, ${l.city}, ${l.state} ${l.zip}`,
+  cta: { label: `Plan training at ${l.city}`, href: `/contact?location=${l.code}` },
+  image: AERIALS[l.field].src, phoneImage: AERIALS[l.field].phone, imageAlt: AERIALS[l.field].alt, airport: l.field,
+}));
+
+const more = [
+  { title: 'Commercial multi-engine', fact: '3 to 4 days', text: 'In the Piper Apache.', href: '/programs/commercial-multi-engine' },
+  { title: 'Multi-engine instructor', fact: '3 to 4 days', text: 'Teach in twins.', href: '/programs/mei' },
+  { title: 'Kodiak 100', fact: 'Initial 3 to 4 days', text: 'Insurance-approved initial and recurrent.', href: '/specialized-training' },
+  { title: 'Endorsements', fact: 'Five offered', text: 'Tailwheel, complex, high-performance, high-altitude, spins.', href: '/specialized-training' },
+  { title: 'Specialty courses', fact: 'Four offered', text: 'Mountain flying, light aerobatics, ski plane, Cirrus transition.', href: '/specialized-training' },
+  { title: 'Flight reviews', fact: 'Local', text: 'Stay current with instruction built around you.', href: '/local-training' },
+];
+
+// The hero is preloaded at the size the visitor's screen needs (phone portrait gets the tall crop).
+const heroWide = await getImage({ src: PHOTOS.hero.src, widths: [960, 1280, 1584].filter((w) => w <= PHOTOS.hero.src.width), format: 'webp', quality: 78 });
+const heroTall = await getImage({ src: PHOTOS.heroTall.src, widths: [640, 960, 1280].filter((w) => w <= PHOTOS.heroTall.src.width), format: 'webp', quality: 76 });
+const story = TESTIMONIALS[0];
+---
+<Base title={SITE.name} description="Accelerated flight training from zero to CFI: Private, Instrument, Commercial, CFI and CFII, MEI. Published prices, three airports, housing on site." overlay>
+  <Fragment slot="head">
+    <link rel="preload" as="image" imagesrcset={heroTall.srcSet.attribute} imagesizes="100vw" media="(max-aspect-ratio: 3/4)" fetchpriority="high" />
+    <link rel="preload" as="image" imagesrcset={heroWide.srcSet.attribute} imagesizes="100vw" media="(min-aspect-ratio: 3/4)" fetchpriority="high" />
+  </Fragment>
+
+  <section class="hero on-ink" aria-labelledby="hero-h">
+    <picture>
+      <source media="(max-aspect-ratio: 3/4)" srcset={heroTall.srcSet.attribute} sizes="100vw" />
+      <img class="hero-img" src={heroWide.src} srcset={heroWide.srcSet.attribute} sizes="100vw" alt={PHOTOS.hero.alt} width={PHOTOS.hero.src.width} height={PHOTOS.hero.src.height} fetchpriority="high" decoding="sync" />
+    </picture>
+    <div class="hero-shade" aria-hidden="true"></div>
+    <div class="wrap hero-copy">
+      <h1 id="hero-h">Become a professional pilot.</h1>
+      <p class="hero-sub">Zero to CFI in six months. <strong>Under $50K.</strong></p>
+      <div class="hero-acts">
+        <a class="btn btn-primary" href="/contact">Build my training plan</a>
+        <a class="btn btn-ghost light" href="#flight-path">See the path</a>
+      </div>
+      <ul class="hero-places" aria-label="Training airports">
+        {SITE.locations.map((l, i) => <li><a href={`#airports-${l.code.toLowerCase()}`} data-goto-airport={i}>{l.city}, {l.state}</a></li>)}
+      </ul>
+    </div>
+  </section>
+
+  <Journey id="flight-path" label="Zero to hero: the training path" stages={climb} variant="climb" />
+  <Journey id="airports" label="Three airports, live weather" stages={airports} variant="airports" />
+
+  <section class="section more" aria-labelledby="more-h">
+    <div class="wrap">
+      <div class="more-head">
+        <h2 id="more-h">Add the privilege. Sharpen the skill.</h2>
+        <p class="lede">Multi-engine, instructor add-ons, endorsements and recurrent work, beyond the core ratings.</p>
+      </div>
+      <ul class="more-list">
+        {more.map((m) => <li><a href={m.href}><span class="mt">{m.title}</span><span class="mf num">{m.fact}</span><span class="mx">{m.text}</span></a></li>)}
+      </ul>
+      <p class="first">First time in the air? <a class="link" href="/introductory-flights">Introductory flights are $100</a>, or <a class="link" href="/scenic-flights">book a scenic flight</a> for up to three people.</p>
+    </div>
+  </section>
+
+  <section class="stay on-ink" aria-labelledby="stay-h">
+    <div class="stay-photo">
+      <Picture src={PHOTOS.apache.src} alt={PHOTOS.apache.alt} widths={[640, 960, 1280, 1600].filter((w) => w <= PHOTOS.apache.src.width)} sizes="(min-width: 1000px) 50vw, 100vw" formats={['webp']} fallbackFormat="webp" quality={72} loading="lazy" />
+    </div>
+    <div class="stay-copy">
+      <h2 id="stay-h">Arrive ready. Fly every day.</h2>
+      <p class="lede">Housing and a car on the field, so your days go to training.</p>
+      <dl class="stay-facts num">
+        <div><dt>Student housing</dt><dd>${TRAVEL.housingPerNight}<small>/night</small></dd></div>
+        <div><dt>Student car</dt><dd>${TRAVEL.carPerDay}<small>/day</small></dd></div>
+      </dl>
+    </div>
+  </section>
+
+  {story && (
+    <section class="section quote" aria-label="Student story">
+      <figure class="wrap">
+        <blockquote><p>“{story.quote}”</p></blockquote>
+        <figcaption><strong>{story.name}</strong>, {story.detail.toLowerCase()}. <a class="link" href="/student-success">More stories</a></figcaption>
+        <p class="fine">Individual results vary.</p>
+      </figure>
+    </section>
+  )}
+  <CtaBand />
+</Base>
+
+<script>
+  import '../scripts/traffic.ts';
+  // Airport chips in the hero jump straight to that airport's stage.
+  document.querySelectorAll<HTMLAnchorElement>('[data-goto-airport]').forEach((a) => a.addEventListener('click', (e) => {
+    e.preventDefault();
+    dispatchEvent(new CustomEvent('journey:goto', { detail: { id: 'airports', index: Number(a.dataset.gotoAirport) } }));
+  }));
+</script>
+
+<style>
+  .hero { position: relative; min-height: 100lvh; overflow: hidden; display: flex; }
+  .hero picture, .hero-img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hero-img { object-fit: cover; object-position: 35% 60%; animation: settle 2.4s var(--ease) both; }
+  @keyframes settle { from { transform: scale(1.06); } to { transform: none; } }
+  .hero-shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(12,22,38,.5) 0%, rgba(12,22,38,0) 26%, rgba(12,22,38,.15) 50%, rgba(12,22,38,.9) 100%); }
+  @media (min-width: 900px) { .hero-shade { background: linear-gradient(180deg, rgba(12,22,38,.45) 0%, rgba(12,22,38,0) 22%), linear-gradient(75deg, rgba(12,22,38,.88) 0%, rgba(12,22,38,.35) 45%, rgba(12,22,38,0) 70%); } }
+  /* Content sits just above the browser toolbar (dvh); the photo runs under it (lvh). */
+  .hero-copy { position: relative; min-height: 100dvh; display: flex; flex-direction: column; justify-content: flex-end; padding-top: calc(var(--nav-h) + 2rem); padding-bottom: calc(1.25rem + env(safe-area-inset-bottom)); }
+  @media (min-width: 900px) { .hero-copy { padding-bottom: clamp(3rem, 6vh, 5.5rem); } }
+  .hero h1 { font-size: clamp(2.6rem, 1.4rem + 6vw, 7.2rem); line-height: .98; max-width: 13ch; letter-spacing: -0.02em; }
+  .hero h1 { animation: rise-h 1s .15s var(--ease) both; }
+  .hero-sub { margin-top: 1rem; font-size: var(--step-1); color: var(--on-ink-2); animation: rise 1s .3s var(--ease) both; }
+  .hero-sub strong { color: var(--on-ink); font-weight: 700; }
+  .hero-acts { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.75rem; animation: rise 1s .45s var(--ease) both; }
+  .hero-places { list-style: none; display: flex; flex-wrap: wrap; gap: 0 1.25rem; margin-top: 1.25rem; animation: rise 1s .6s var(--ease) both; }
+  .hero-places a { display: inline-flex; align-items: center; gap: .45rem; min-height: 44px; color: var(--on-ink); text-decoration: none; font-weight: 600; font-size: .9375rem; }
+  .hero-places a::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--radar); }
+  .hero-places a:hover { text-decoration: underline; text-underline-offset: .25em; }
+  /* The headline never starts at opacity 0, so it counts as the page's first large paint. */
+  @keyframes rise-h { from { opacity: .01; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  @media (max-width: 639px) { .hero-acts .btn-ghost { display: none; } }
+
+  .more-head { display: grid; gap: 1rem; margin-bottom: 2.5rem; }
+  @media (min-width: 1000px) { .more-head { grid-template-columns: 1fr 1fr; align-items: end; gap: 4rem; } }
+  .more h2 { font-size: var(--step-4); max-width: 14ch; }
+  .more-list { list-style: none; display: grid; border-top: 1px solid var(--rule); }
+  @media (min-width: 800px) { .more-list { grid-template-columns: 1fr 1fr; column-gap: 3rem; } }
+  .more-list a { display: grid; grid-template-columns: 1fr auto; gap: .2rem 1rem; padding: 1.4rem 0; border-bottom: 1px solid var(--rule); text-decoration: none; }
+  .mt { font: 500 var(--step-2)/1.15 var(--font-display); transition: color .2s; }
+  .mf { color: var(--blue-text); font-weight: 700; font-size: var(--step--1); align-self: center; }
+  .mx { grid-column: 1 / -1; color: var(--text-2); }
+  .more-list a:hover .mt { color: var(--blue-text); }
+  .first { margin-top: 2rem; color: var(--text-2); }
+
+  .stay { display: grid; }
+  @media (min-width: 1000px) { .stay { grid-template-columns: 1fr 1fr; min-height: 36rem; } }
+  .stay-photo { position: relative; min-height: 22rem; }
+  .stay-photo :global(img) { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .stay-copy { padding: clamp(3rem, 2rem + 4vw, 6rem) var(--gutter); display: grid; align-content: center; gap: 1.25rem; }
+  .stay h2 { font-size: var(--step-4); max-width: 12ch; }
+  .stay-facts { display: flex; gap: 3rem; margin-top: 1rem; }
+  .stay-facts dt { color: var(--on-ink-2); font-weight: 600; font-size: var(--step--1); }
+  .stay-facts dd { margin: .3rem 0 0; font: 500 var(--step-5)/1 var(--font-display); }
+  .stay-facts small { font: 600 var(--step-0) var(--font-ui); color: var(--on-ink-2); margin-left: .15rem; }
+
+  .quote figure { margin-inline: auto; max-width: 64rem; }
+  .quote blockquote { margin: 0; font: 400 var(--step-4)/1.2 var(--font-display); letter-spacing: -0.01em; }
+  .quote figcaption { margin-top: 1.5rem; color: var(--text-2); }
+  .quote figcaption strong { color: var(--text); }
+  .quote .fine { margin-top: .5rem; color: var(--text-2); font-size: var(--step--1); }
+</style>

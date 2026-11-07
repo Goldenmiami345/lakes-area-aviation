@@ -1,0 +1,20 @@
+---
+import Base from '../layouts/Base.astro';
+import { SITE } from '../data/site';
+---
+<Base title="Page not found" description="This page doesn't exist." noindex>
+  <section class="nf">
+    <div class="wrap">
+      <p class="code num">404</p>
+      <h1>This page went around.</h1>
+      <p class="lede">The address may have changed. Try one of these instead.</p>
+      <div class="acts"><a class="btn btn-primary" href="/">Home</a><a class="btn btn-ghost" href="/programs">Programs</a><a class="btn btn-ghost" href={SITE.phoneHref}>Call {SITE.phone}</a></div>
+    </div>
+  </section>
+</Base>
+<style>
+  .nf { padding: calc(var(--nav-h) + 6rem) 0 8rem; }
+  .code { color: var(--blue-text); font-weight: 700; }
+  h1 { font-size: var(--step-5); margin: .5rem 0 1rem; }
+  .acts { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
+</style>

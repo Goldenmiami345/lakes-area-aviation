@@ -1,0 +1,23 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import Airports from '../components/Airports.astro';
+import { SITE } from '../data/site';
+---
+<Base title="Introductory flight, $100" description="Fly one of our aircraft with a flight instructor for $100. A hands-on first lesson and the clearest way to find out if flight training is for you.">
+  <PageHead kicker="Introductory flight" title="Take the controls for $100." text="A real first lesson with an instructor beside you, and the clearest way to find out if flight training is for you.">
+    <div class="acts"><a class="btn btn-primary" href={SITE.phoneHref}>Call to book <span class="num">{SITE.phone}</span></a><a class="btn btn-ghost" href="/contact?goal=intro">Request a date online</a></div>
+  </PageHead>
+  <section class="section">
+    <div class="wrap what">
+      <h2>One of our aircraft, one of our instructors</h2>
+      <p>New to flying, or looking for a new school, the introductory flight puts you in the pilot’s seat with a flight instructor for $100. Call to schedule.</p>
+    </div>
+  </section>
+  <Airports heading="Fly from any of three airports" />
+</Base>
+<style>
+  .acts { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
+  .what h2 { font-size: var(--step-3); margin-bottom: 1.5rem; }
+  .what p { color: var(--text-2); max-width: 52ch; }
+</style>

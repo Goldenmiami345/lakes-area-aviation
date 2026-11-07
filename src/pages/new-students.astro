@@ -1,0 +1,36 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { FSP_SIGNUP, SITE, TRAVEL } from '../data/site';
+---
+<Base title="New students" description="Three steps to your first day of flight training at Lakes Area Aviation, plus student housing at $30 a night and cars at $20 a day.">
+  <PageHead kicker="New students" title="Three steps to your first day." text="Scheduling, billing and records all run through Flight Schedule Pro." />
+  <section class="section">
+    <div class="wrap grid">
+      <ol class="steps">
+        <li><span class="n num">1</span><div><h2>Talk with us</h2><p>Your goals, your dates and what you already hold. Call <a class="link num" href={SITE.phoneHref}>{SITE.phone}</a> or build a plan online.</p></div></li>
+        <li><span class="n num">2</span><div><h2>Create your scheduling account</h2><p>Request a Flight Schedule Pro account. Every booking and invoice lives there.</p><p class="act"><a class="btn btn-primary" href={FSP_SIGNUP} target="_blank" rel="noopener">Request Flight Schedule Pro access<span class="sr-only"> (opens in a new tab)</span></a></p></div></li>
+        <li><span class="n num">3</span><div><h2>Already on Flight Schedule Pro?</h2><p>Call the office for our Company ID and add Lakes Area Aviation to your existing profile.</p></div></li>
+      </ol>
+      <aside class="travel">
+        <h2>Traveling to train?</h2>
+        <p>Student housing is <strong class="num">${TRAVEL.housingPerNight}</strong> a night. Students in housing can rent a car for <strong class="num">${TRAVEL.carPerDay}</strong> a day.</p>
+        <a class="btn btn-ghost" href="/contact">Include it in my plan</a>
+      </aside>
+    </div>
+  </section>
+  <CtaBand />
+</Base>
+<style>
+  .grid { display: grid; gap: 4rem; }
+  @media (min-width: 1000px) { .grid { grid-template-columns: 1.5fr 1fr; gap: 6rem; align-items: start; } }
+  .steps { list-style: none; border-top: 1px solid var(--rule); }
+  .steps li { display: grid; grid-template-columns: 3rem 1fr; gap: 1rem; padding: 2rem 0; border-bottom: 1px solid var(--rule); }
+  .n { font: 500 var(--step-3)/1 var(--font-display); color: var(--blue-text); }
+  .steps h2 { font-size: var(--step-2); margin-bottom: .5rem; }
+  .steps p { color: var(--text-2); max-width: 48ch; }
+  .act { margin-top: 1.25rem; }
+  .travel { background: var(--paper-2); padding: 2rem; border-radius: var(--radius); display: grid; gap: 1rem; justify-items: start; }
+  .travel h2 { font-size: var(--step-2); }
+</style>

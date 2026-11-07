@@ -1,0 +1,31 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { Image } from 'astro:assets';
+import { TEAM } from '../data/site';
+const shots = import.meta.glob<{ default: ImageMetadata }>('../assets/team/*.jpg', { eager: true });
+const photoFor = (name: string) => shots[`../assets/team/${name.toLowerCase().replace(/[^a-z]+/g, '-')}.jpg`]?.default;
+---
+<Base title="Team" description="Lakes Area Aviation's flight instructors: airplane, instrument, multi-engine and helicopter instruction across Minnesota, Colorado and Arizona.">
+  <PageHead kicker="Team" title="The people who sign you off." text="Flight instructors for airplane, instrument, multi-engine and helicopter training." />
+  <section class="section">
+    <div class="wrap">
+      <ul class="roster">
+        {TEAM.map((p) => (
+          <li>{(() => { const ph = photoFor(p.name); return ph ? <Image src={ph} alt={`${p.name}`} widths={[320, 480, 640]} sizes="(min-width: 1100px) 22vw, (min-width: 640px) 30vw, 44vw" format="webp" quality={78} class="shot" /> : null; })()}<h2>{p.name}</h2><p class="certs">{'role' in p && p.role ? <span class="role">{p.role}. </span> : null}{p.ratings}</p></li>
+        ))}
+      </ul>
+    </div>
+  </section>
+  <CtaBand />
+</Base>
+<style>
+  .roster { list-style: none; display: grid; gap: 2.5rem 1.25rem; grid-template-columns: repeat(auto-fill, minmax(min(10rem, 44%), 1fr)); }
+  @media (min-width: 640px) { .roster { grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr)); gap: 3rem 1.75rem; } }
+  .roster li { display: grid; align-content: start; }
+  .shot { width: 100%; height: auto; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius); background: var(--paper-2); margin-bottom: 1rem; }
+  .roster h2 { font-size: var(--step-2); }
+  .certs { color: var(--text-2); margin-top: .35rem; }
+  .role { color: var(--blue-text); font-weight: 600; }
+</style>

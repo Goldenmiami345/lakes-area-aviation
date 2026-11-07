@@ -1,0 +1,26 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import Airports from '../components/Airports.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { TRAVEL } from '../data/site';
+---
+<Base title="Locations" description="Train at Little Falls/Morrison County Airport (KLXL) in Minnesota, Platte Valley Airpark (18V) in Colorado, or Cottonwood Municipal Airport (P52) in Arizona.">
+  <PageHead kicker="Locations" title="Minnesota, Colorado, Arizona." text="Ask which ratings, aircraft and accelerated dates are open at each airport when you plan." />
+  <Airports heading="Choose an airport" withPlan />
+  <section class="section travel-s">
+    <div class="wrap travel">
+      <h2>Staying for training</h2>
+      <p>Student housing is <strong class="num">${TRAVEL.housingPerNight}</strong> a night, and residents can rent a student car for <strong class="num">${TRAVEL.carPerDay}</strong> a day. Availability varies by airport and date, so include your preferred location in your plan.</p>
+      <a class="link" href="/#airports">See all three airports with live weather</a>
+    </div>
+  </section>
+  <CtaBand />
+</Base>
+<style>
+  .travel-s { padding-top: 0; }
+  .travel { display: grid; gap: 1rem; max-width: 52rem; justify-items: start; }
+  .travel h2 { font-size: var(--step-3); }
+  .travel p { color: var(--text-2); }
+  .travel .link { display: inline-flex; min-height: 44px; align-items: center; }
+</style>

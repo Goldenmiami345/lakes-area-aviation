@@ -1,0 +1,65 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import CtaBand from '../components/CtaBand.astro';
+import { RATES } from '../data/site';
+---
+<Base title="Rates" description="Every published Lakes Area Aviation rate: instruction from $60/hr, Cessna 172 from $175/hr prepaid, Piper Apache, intro flights, housing and student cars.">
+  <PageHead kicker="Rates" title="Every rate, in one place." text="Aircraft rates are wet: fuel and insurance are included. State tax is additional." />
+
+  <section class="section">
+    <div class="wrap rates">
+      <div class="block">
+        <h2>Aircraft rental</h2>
+        <p class="note">{RATES.prepayRule}</p>
+        <table class="sheet">
+          <caption class="sr-only">Aircraft rental rates per hour</caption>
+          <thead><tr><th scope="col">Aircraft</th><th scope="col" class="r">Regular</th><th scope="col" class="r">Prepay</th></tr></thead>
+          <tbody>
+            {RATES.aircraft.map((a) => (
+              <tr><th scope="row"><span class="type">{a.type}</span><span class="names">{a.names}</span></th><td class="r num">${a.regular}/hr</td><td class="r num strong">${a.prepay}/hr</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div class="block">
+        <h2>Instruction</h2>
+        <table class="sheet">
+          <caption class="sr-only">Instruction rates per hour</caption>
+          <tbody>
+            {RATES.instruction.map((r) => <tr><th scope="row">{r.label}</th><td class="r num strong">${r.rate}/hr</td></tr>)}
+          </tbody>
+        </table>
+
+        <h2 class="h2-gap">Flights and stays</h2>
+        <table class="sheet">
+          <caption class="sr-only">Other prices</caption>
+          <tbody>
+            {RATES.other.map((r) => <tr><th scope="row">{r.label}</th><td class="r num strong">{r.price}</td></tr>)}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="wrap"><p class="foot-note">{RATES.wetNote} Examiner fees are paid to the examiner and are not included.</p></div>
+  </section>
+
+  <CtaBand title="Get a plan, not a guess." text="Aircraft time depends on the rating, your experience and your proficiency. Share your logbook totals and goals for a real estimate." />
+</Base>
+
+<style>
+  .rates { display: grid; gap: 3.5rem; }
+  @media (min-width: 1000px) { .rates { grid-template-columns: 1.15fr 1fr; gap: 5rem; } }
+  h2 { font-size: var(--step-3); }
+  .h2-gap { margin-top: 3.5rem; }
+  .note { color: var(--text-2); margin-top: .75rem; max-width: 52ch; }
+  .sheet { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+  .sheet th, .sheet td { padding: 1rem 0; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: baseline; }
+  .sheet thead th { font-size: var(--step--1); font-weight: 600; color: var(--text-2); padding-block: .5rem; }
+  .sheet tbody th { font-weight: 500; padding-right: 1rem; }
+  .sheet .r { text-align: right; padding-left: 1rem; white-space: nowrap; }
+  .strong { font-weight: 700; }
+  .type { display: block; font-weight: 600; }
+  .names { display: block; color: var(--text-2); font-size: var(--step--1); margin-top: .15rem; }
+  .foot-note { margin-top: 3rem; color: var(--text-2); font-size: var(--step--1); max-width: 70ch; }
+</style>

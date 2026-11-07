@@ -1,0 +1,104 @@
+/* Lakes Area Aviation: design tokens and base styles.
+   Brand: Andada Pro (display) + Montserrat (UI), beige daylight surfaces, night-panel ink, one blue. */
+
+@font-face { font-family: 'Andada Pro'; src: url('/fonts/andada-pro.woff2') format('woff2'); font-weight: 400 840; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Andada Pro'; src: url('/fonts/andada-pro-italic.woff2') format('woff2'); font-weight: 400 840; font-style: italic; font-display: swap; }
+@font-face { font-family: 'Montserrat'; src: url('/fonts/montserrat.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }
+/* Metric-matched fallbacks keep layout still while the web fonts load. */
+@font-face { font-family: 'Andada Fallback'; src: local('Georgia'); size-adjust: 97%; ascent-override: 92%; descent-override: 26%; }
+@font-face { font-family: 'Montserrat Fallback'; src: local('Arial'); size-adjust: 113%; ascent-override: 85%; descent-override: 22%; }
+
+:root {
+  --paper: #faf6ef;        /* daylight surfaces */
+  --paper-2: #f2ebdf;      /* recessed surfaces, table stripes */
+  --rule: #ded4c4;         /* hairlines on paper */
+  --text: #231f1a;         /* body text on paper */
+  --text-2: #5f574c;       /* secondary text on paper (≥ 6:1) */
+  --ink: #0c1626;          /* night panel: journeys, footer, nav */
+  --ink-2: #16233a;
+  --on-ink: #f3efe7;
+  --on-ink-2: #b5bcc8;     /* secondary text on ink (≥ 7:1) */
+  --blue: #006bf1;         /* brand blue: fills and large text */
+  --blue-text: #0057c7;    /* blue for small text on paper (≥ 5.6:1) */
+  --blue-on-ink: #6aa6ff;  /* blue text on ink (≥ 6.5:1) */
+  --radar: #7fe3b8;        /* traffic and instrument symbology only */
+  --amber: #f2b33d;        /* MVFR / caution only */
+  --red: #ff6b6b;          /* IFR only */
+
+  --font-display: 'Andada Pro', 'Andada Fallback', Georgia, serif;
+  --font-ui: 'Montserrat', 'Montserrat Fallback', system-ui, sans-serif;
+
+  /* Type scale: 1.25 (major third) from a 17 px body. */
+  --step--1: 0.8125rem;
+  --step-0: 1.0625rem;
+  --step-1: 1.3125rem;
+  --step-2: 1.625rem;
+  --step-3: clamp(1.75rem, 1.2rem + 2.2vw, 2.5rem);
+  --step-4: clamp(2.1rem, 1.3rem + 3.4vw, 3.6rem);
+  --step-5: clamp(2.4rem, 1.2rem + 5vw, 5.4rem);
+
+  --gutter: clamp(1.25rem, 0.5rem + 3.4vw, 4.5rem);
+  --measure: 62ch;
+  --nav-h: 4.25rem;
+  --radius: 4px;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --journey-stage: 100svh;
+  color-scheme: light;
+}
+@media (pointer: fine) and (min-width: 1024px) { :root { --journey-stage: 75vh; } }
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-padding-top: calc(var(--nav-h) + 1rem); }
+body { margin: 0; background: var(--paper); color: var(--text); font: 400 var(--step-0)/1.6 var(--font-ui); font-feature-settings: 'lnum'; -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; overflow-x: clip; }
+img, video, svg { display: block; max-width: 100%; }
+img { height: auto; }
+a { color: inherit; }
+button, input, select, textarea { font: inherit; color: inherit; }
+h1, h2, h3, h4 { font-family: var(--font-display); font-weight: 500; line-height: 1.08; letter-spacing: -0.012em; margin: 0; text-wrap: balance; }
+p { margin: 0; text-wrap: pretty; }
+ul, ol { margin: 0; padding: 0; }
+.num { font-variant-numeric: tabular-nums lining-nums; }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: 2px; }
+.on-ink :focus-visible { outline-color: var(--blue-on-ink); }
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.skip { position: fixed; left: 1rem; top: -4rem; z-index: 100; background: var(--blue); color: #fff; padding: .75rem 1rem; font-weight: 600; border-radius: var(--radius); transition: top .2s; }
+.skip:focus { top: 1rem; }
+
+.wrap { width: 100%; max-width: 1440px; margin-inline: auto; padding-inline: var(--gutter); }
+.measure { max-width: var(--measure); }
+.section { padding-block: clamp(4rem, 3rem + 5vw, 8rem); }
+.on-ink { background: var(--ink); color: var(--on-ink); }
+
+/* Buttons: one primary action shape, one secondary. 44 px minimum. */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: .6em; min-height: 3rem; padding: .75rem 1.35rem; border-radius: var(--radius); font: 600 0.9375rem/1.1 var(--font-ui); letter-spacing: .01em; text-decoration: none; border: 1px solid transparent; cursor: pointer; transition: background-color .2s, border-color .2s, color .2s; max-width: 100%; text-align: center; text-wrap: balance; }
+.btn-primary { background: var(--blue); color: #fff; }
+.btn-primary:hover { background: #005ad0; }
+.btn-ghost { border-color: currentColor; background: transparent; }
+.on-ink .btn-ghost:hover, .btn-ghost.light:hover { background: rgba(255,255,255,.1); }
+.btn-ghost:not(.light):hover { background: var(--paper-2); }
+.link { color: var(--blue-text); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: .2em; }
+.on-ink .link { color: var(--blue-on-ink); }
+.link:hover { text-decoration-thickness: 2px; }
+
+.kicker { font: 600 var(--step--1)/1.3 var(--font-ui); color: var(--text-2); }
+.on-ink .kicker { color: var(--on-ink-2); }
+.lede { font-size: var(--step-1); line-height: 1.5; color: var(--text-2); max-width: 46ch; }
+.on-ink .lede { color: var(--on-ink-2); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}
+
+/* ATIS strip on the airport aerials (filled by src/scripts/traffic.ts). */
+.atis-row { display: flex; flex-wrap: wrap; gap: .25rem .5rem; align-items: center; font-size: .8125rem; font-weight: 600; color: var(--on-ink); }
+.atis-row > span { padding: .3rem .55rem; border-radius: 3px; background: rgba(12,22,38,.66); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.atis-row em { font-style: normal; color: var(--on-ink-2); font-weight: 500; margin-right: .3rem; }
+.atis-id { color: var(--radar) !important; font-weight: 800; }
+.cat { font-weight: 800; }
+.cat-vfr { color: var(--radar); } .cat-mvfr { color: #8cb8ff; } .cat-ifr { color: var(--red); } .cat-lifr { color: #f08cff; }
+.atis-call { margin-top: .5rem; font-size: .8125rem; font-weight: 600; color: var(--radar); min-height: 1.3em; text-shadow: 0 1px 2px rgba(0,0,0,.8); }
+.atis-call:empty { visibility: hidden; }
+.atis-call.flash { animation: call .5s ease-out; }
+@keyframes call { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
+.atis-src { margin-top: .15rem; font-size: .75rem; color: var(--on-ink-2); text-shadow: 0 1px 2px rgba(0,0,0,.8); }
+@media (max-width: 639px) { .atis-row > span:nth-child(n+5):not(.cat) { display: none; } }
